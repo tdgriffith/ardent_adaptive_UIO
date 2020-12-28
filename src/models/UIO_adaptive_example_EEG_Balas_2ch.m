@@ -9,7 +9,7 @@ set(groot, 'defaultLegendInterpreter','latex');
 %% Prepare Data
 fs=512;
 dt=inv(fs);
-EEG=load('F:\Documents\MATLAB\group_01_mat\group_01_sujet_01.mat');
+EEG=load('/home/tris/Github/ardent_adaptive_UIO/data/processed/group_01_sujet_01.mat');
 %Y_data=EEG.samples(:,[2,8,16,20,24,30]);
 Y_data=EEG.samples(:,[2,30]);
 t=EEG.samples(:,1);
