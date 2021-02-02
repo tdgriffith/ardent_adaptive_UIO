@@ -18,16 +18,16 @@ C=[1, epsilon];
 Phi_k = [1 cos(t) sin(t)].';
 gamma_e=1;
 gamma_u=2;
-g1=4;
-g2=-2;
-g3=5;
+g1=10;
+g2=2;
+g3=-5;
 ThetaLstar=[g1,g2,g3];
 Amc=[real(Am) -imag(Am);imag(Am) real(Am)];
 Bc=[real(B) -imag(B);imag(B) real(B)];
 Ac=[real(A) -imag(A);imag(A) real(A)];
 %% DAC with known A,B,C
-sigma_e=1;
-sigma_d=2;
+sigma_e=0.1;
+sigma_d=0.2;
 %% Sim
 sim_out=sim('UIOwDAC_balas_01.slx',60);
 figure
@@ -124,24 +124,42 @@ P3=[1 0;0 -1];
 P4=[0 -1j;1j 0];
 
 A=0.2*P1+2*P2+1.5*P3+1*P4;
+%A=0.2*P1;
 A=A*-1j;
-A=A-0.1*eye(2)
+A=A-1*eye(2)
 syms ep Lx
 B=[0;1];
 C_sym=[1, ep];
 Am_sys=A-B*Lx*C_sym;
-Am=double(subs(Am_sys,{ep,Lx},{0.1,1-2*j}))
-Am(1,1)=Am(1,1)-0.1;
+Am=double(subs(Am_sys,{ep,Lx},{0.1,1}))
+%Am(1,1)=Am(1,1)-0.1;
 C=double(subs(C_sym,{ep},{0.1}));
 Amc=[real(Am) -imag(Am);imag(Am) real(Am)];
 Bc=[real(B) -imag(B);imag(B) real(B)];
 Ac=[real(A) -imag(A);imag(A) real(A)];
 
-gamma_e=1;
-gamma_u=1;
-g1=4+2j;
+gamma_e=4;
+gamma_u=.01;
+g1=2;
+g2=0+0j;
+g3=-0+0j;
+ThetaLstar=[g1,g2,g3];
+%% Other algortihm
+Am=[0 1;-1 -1];
+C=[1 0.1];
+B=[0;1];
+Lx=0.2;
+A=Am+B*Lx*C;
+
+Amc=[real(Am) -imag(Am);imag(Am) real(Am)];
+Bc=[real(B) -imag(B);imag(B) real(B)];
+Ac=[real(A) -imag(A);imag(A) real(A)];
+gamma_e=.0001;
+K_u=-0.1;
+g1=-1+3j;
 g2=0;
 g3=0;
-ThetaLstar=[g1,g2,g3];
+
+
 
 
