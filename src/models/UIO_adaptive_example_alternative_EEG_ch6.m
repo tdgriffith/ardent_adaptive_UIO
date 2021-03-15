@@ -1,6 +1,5 @@
 %% Unknown Input Observer with Adaptive State Estimation
-% Implementation from the following paper:
-% B. Alenezi, J. Hu and S. H. {ak, "Adaptive Unknown Input and State Observers," 2019 American Control Conference (ACC), Philadelphia, PA, USA, 2019, pp. 2434-2439, doi: 10.23919/ACC.2019.8815288.
+% Implementation from our own algorithm on EEG
 %% Setup
 %opengl software
 set(groot,'defaulttextinterpreter','latex');  
@@ -11,6 +10,7 @@ fs=512;
 dt=inv(fs);
 EEG=load('F:\Documents\MATLAB\group_01_mat\group_01_sujet_01.mat');
 Y_data=EEG.samples([100:end],[2,8,16,20,24,30]);
+%Y_data=EEG.samples([100:end],[2]);
 
 t=EEG.samples([100:end],1);
 Y_data=detrend(Y_data);
@@ -18,7 +18,7 @@ Y_data=bandpass(Y_data,[1 49],fs); % PLAY with this
 Y_data=Y_data';
 
     
-Y_sim=array2timetable(Y_data(:,1:512*60)','SampleRate',fs);
+Y_sim=array2timetable(Y_data(:,1:512*60*3)','SampleRate',fs);
 Y_sim1=Y_sim(:,1);
 Y_sim2=Y_sim(:,2);
 Y_sim3=Y_sim(:,3);
@@ -28,7 +28,7 @@ Y_sim6=Y_sim(:,6);
 %% OMA
 order = 40;
 s = 2*order;
-opt_order=30;
+opt_order=6;
 [A_data,C_data,G_data,R0_data] = ssidata(Y_data,order,s);
 err = [0.01,0.05,0.98];
 [IDs_cov] = plotstab(A_data,C_data,Y_data,dt,[],err);
@@ -40,40 +40,35 @@ Phi_data{opt_order}=Phi_data{opt_order}/norm_data; %normalize the one of interes
 ss_d=ss(A_data{opt_order},[],C_data{opt_order},[],fs);
 ss_c=d2c(ss_d);
 
-B2=ones(opt_order,1);
-
-
-%% Solve First LMIs
-% cvx_begin sdp %CONTINUOUS
-%     variable P(opt_order,opt_order) symmetric
-%     variable Y(size(C_data{opt_order},2),size(C_data{opt_order},1))
-%     A_data{opt_order}'*P+P*A_data{opt_order}-C_data{opt_order}'*Y'-Y*C_data{opt_order} <= -1*eye(opt_order);
-%     P >= 1*eye(opt_order);
-% cvx_end
-
-%% DISCRETE LMI
-cvx_begin sdp
-    variable P(opt_order,opt_order) symmetric
-    variable Y(size(C_data{opt_order},2),size(C_data{opt_order},1))
-    [P, (P*A_data{opt_order}-Y*C_data{opt_order})' ;
-        P*A_data{opt_order}-Y*C_data{opt_order}, P] >= 1e-16*eye(2*opt_order)
-cvx_end
-%%
-
-L=inv(P)*Y;
-%mat=A_data{opt_order}'*P+P*A_data{opt_order}-C_data{opt_order}'*Y'-Y*C_data{opt_order};
-abs(eig(A_data{opt_order}-L*C_data{opt_order}))
-
-F=B2'*P/(C_data{opt_order});
+B=ones(opt_order,1);
 
 %%
-Gamma=0.001;
-Abar=[A_data{opt_order}-L*C_data{opt_order}, B2;
-    -Gamma*B2'*P zeros(1)];
-abs(eig(Abar))
 
+Am=ss_c.A;
+C=ss_c.C;
+mats=[];
+for i=1:1:40
+    mat=[0 1;-i^2 0]
+    mats=blkdiag(mats,mat)
+end
+%Fu=[0 1 0 0;-25 0 0 0;0 0 0 1;0 0 -144 0];
+gamma_e=.0001*ones(length(Am),1);
+Fu=mats;
+K_u=ones(size(Fu,1),1);
+Theta=ones(1,size(Fu,1));
+Bbar=padarray(B,[size(Fu,1),0],0,'post');
+
+Abar=[Am B*Theta; zeros(size(Fu,1),size(Am,2)) Fu];
+eigAbar=eig(Abar);
+Cbar=padarray(C,[0,size(Fu,1)],0,'post');
+rank(obsv(Abar,Cbar))
+[Klqr,Slqr,elqr]=lqr(Abar',Cbar',1*eye(86),0.1,0)
+Klqr=Klqr.'
+[eig(Abar-Klqr*Cbar)]
+K1=Klqr(1:length(Am),:);
+K2=Klqr(length(Am)+1:end,:);
 %% Plots and Sim
-sim2=sim('UIO_example_EEG_6ch_discrete.slx',60);
+sim2=sim('real_UIO_EEG_2021_03_03_01.slx',180);
 figure
 ax1=subplot(1,3,1);
 plot(sim2.y1)
@@ -81,7 +76,7 @@ hold on
 plot(sim2.yhat1)
 grid on
 xlim([18,22])
-legend('Actual','$Predicted$')
+legend('Actual','Predicted')
 title('($y_1$ and $\hat{y}_1$)')
 xlabel('Time (s)')
 ylabel('Output State ($y$)')
@@ -91,12 +86,12 @@ hold on
 plot(sim2.yhat2)
 grid on
 xlim([18,22])
-legend('Actual','$Predicted$')
+legend('Actual','Predicted')
 title('($y_2$ and $\hat{y}_2$)')
 xlabel('Time (s)')
 ylabel('Output State ($y$)')
 ax3=subplot(1,3,3);
-plot(sim2.ey)
+plot(sim2.ey.Time,sim2.ey.Data(:,5)) %SINGLE CHannel
 grid on
 xlim([18,22])
 title('Error ($e_y$)')
@@ -120,7 +115,7 @@ title('Estimated Internal State ($\hat{x}_2$)')
 xlabel('Time (s)')
 ylabel('Internal State ($\hat{x}_2$)')
 subplot(2,2,3)
-plot(sim2.xhat1)
+plot(sim2.xhat3)
 grid on
 title('Estimated Internal State ($\hat{x}_3$)')
 xlabel('Time (s)')

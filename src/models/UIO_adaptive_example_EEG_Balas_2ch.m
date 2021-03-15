@@ -57,6 +57,7 @@ epsilon=4/5;
 Lx=5;
 Am=[0 1;-5 -4];
 A=[0 1;-5+Lx -4+epsilon*Lx]
+A=A-0.4*eye(2);
 B=[0;1];
 C=[1, epsilon];
 Phi_k = [1 cos(t) sin(t)].';
