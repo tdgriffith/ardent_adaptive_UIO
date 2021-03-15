@@ -46,5 +46,11 @@ Gamma=20;
 Abar=[A-L*C, B2;
     -Gamma*B2'*P zeros(1)];
 
-
-
+cvx_begin sdp
+    variable P(4,4) symmetric
+    variable Y(4,2)
+    minimize(trace(P)+abs(100*Y(2,2)));
+    subject to
+        A'*P+P*A-C'*Y'-Y*C <= -1e-5*eye(4)
+        P >= 1e-5*eye(4)
+cvx_end

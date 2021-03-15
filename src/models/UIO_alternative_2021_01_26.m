@@ -13,9 +13,9 @@ A=Am+B*Lx*C;
 Amc=[real(Am) -imag(Am);imag(Am) real(Am)];
 Bc=[real(B) -imag(B);imag(B) real(B)];
 Ac=[real(A) -imag(A);imag(A) real(A)];
-gamma_e=.0001;
+gamma_e=.001;
 K_u=-0.05;
-g1=-1-2j;
+g1=1+3j;
 g2=0; %STEP ONLY
 g3=0; %STEP ONLY
 
@@ -101,9 +101,9 @@ Ac=[real(A) -imag(A);imag(A) real(A)];
 gamma_e=0.001;
 ku=-0.2; %Placement needs work
 K_u=[-.1;-.2;9];
-g1=-5;
-g2=2; 
-g3=3; 
+g1=5+1j;
+g2=0; 
+g3=0; 
 Fu=[0 0 0; 0 0 1 ;0 -25 0];
 Theta=[1,1,1];
 Ac_bar=[Am B*Theta; K_u*C Fu];
@@ -304,10 +304,164 @@ v_ts=[];
 ku_ts=[];
 for ku=-15:0.1:15
     ku_ts=[ku_ts,ku]
-    K_u=[-.1;-.2;9]
+    K_u=[-.05;-.005;.1]
     Ac_bar=[Am B*Theta; K_u*C Fu]
     v=eig(Ac_bar)
     v_ts=[v_ts,v]
 end
 figure
 plot(ku_ts,real(v_ts))
+
+%% Complex A
+H=[3 2+1j;2-1j 1];
+A=-1j*H;
+C=[1 0.1];
+B=[0;1];
+Lx=0.1;
+Am=A-(B*Lx*C)
+A=Am
+Am=Am-.1*eye(2)
+
+Amc=[real(Am) -imag(Am);imag(Am) real(Am)];
+Bc=[real(B) -imag(B);imag(B) real(B)];
+Ac=[real(A) -imag(A);imag(A) real(A)];
+gamma_e=0.001;
+ku=-0.2; 
+K_u=[-.05;-.005];
+g1=2+1j;
+g2=0; 
+g3=0; 
+Fu=[0 1 ;-25 0];
+Theta=[1,1];
+Ac_bar=[Am B*Theta; K_u*C Fu];
+eig(Ac_bar)
+%% Complex search
+v_ts=[];
+ku_ts=[];
+for ku=-5:0.01:5
+    ku_ts=[ku_ts,ku]
+    K_u=[0.215;ku]
+    Ac_bar=[Am B*Theta; K_u*C Fu]
+    v=[eig(Ac_bar);0]
+    v_ts=[v_ts,v]
+end
+figure
+plot(ku_ts,real(v_ts))
+
+
+%% 3 Signal Plots COMPLEX
+sim_out=sim('complex_UIO_alternative_2021_01_27.slx',60);
+figure
+ax1=subplot(2,3,1);
+plot(sim_out.y.Time,abs(squeeze(sim_out.y.Data)))
+hold on
+plot(sim_out.yhat.Time,abs(squeeze(sim_out.yhat.Data)))
+grid on
+%xlim([18,22])
+legend('$y$','$\hat{y}$')
+title('($y$ and $\hat{y}$)')
+xlabel('Time (s)')
+ylabel('Output State ($y$)')
+ax2=subplot(2,3,2);
+plot(sim_out.x.Time,abs(squeeze(sim_out.x.Data)))
+hold on
+plot(sim_out.xhat.Time,abs(squeeze(sim_out.xhat.Data)),'-.')
+grid on
+%xlim([18,22])
+%legend('$\textit{R}(x_1)$','$\textit{R}(x_2)$','$\textit{R}(x_3)$','$\textit{R}(x_4)$','$\textit{R}( \hat{x}_1)$','$\textit{R}( \hat{x}_2)$','$\textit{R}( \hat{x}_3)$','$\textit{R}( \hat{x}_4)$','$\textit{C}(x_1)$','$\textit{C}(x_2)$','$\textit{C}(x_3)$','$\textit{C}(x_4)$','$\textit{C}( \hat{x}_1)$','$\textit{C}( \hat{x}_2)$','$\textit{C}( \hat{x}_3)$','$\textit{C}( \hat{x}_4)$')
+title('($x$ and $\hat{x}$)')
+xlabel('Time (s)')
+ylabel('Internal State ($x$)')
+
+ax3=subplot(2,3,3);
+%plot(sim_out.ey)
+plot(sim_out.ey.Time,abs(squeeze(sim_out.ey.Data)))
+grid on
+legend('$e_y$')
+title('State Error')
+xlabel('Time (s)')
+ylabel('Error ($e_y$)')
+
+ax4=subplot(2,3,4);
+plot(sim_out.u.Time,abs(squeeze(sim_out.u.Data)))
+hold on
+plot(sim_out.u.Time,abs(squeeze(sim_out.uhat.Data)),'-.')
+plot(sim_out.uhat_tot.Time,abs(squeeze(sim_out.uhat_tot.Data)),'-.')
+grid on
+title('Input State ($u$ and $\hat{u}$)')
+xlabel('Time (s)')
+ylabel('Input State')
+%legend('$u$','$\hat{u}$')
+
+ax5=subplot(2,3,5);
+plot(sim_out.u.Time,abs(squeeze(sim_out.eu.Data)))
+hold on
+plot(sim_out.u.Time,abs(squeeze(sim_out.eu_tot.Data)))
+grid on
+
+title('Input Error ($e_u$)')
+xlabel('Time (s)')
+ylabel('Input Error ($e_u$)')
+%legend('$e_u$')
+
+%ax6=subplot(2,3,6);
+
+sgtitle(['UIO Overview: Input of ', num2str(g2),'$\sin{t}+$',num2str(g3),'$\cos{t}+$',num2str(g1)])
+
+figure
+ax7=subplot(2,3,1)
+plot(sim_out.u.Time,real(squeeze(sim_out.u.Data)))
+hold on
+plot(sim_out.uhat_tot.Time,real(squeeze(sim_out.uhat_tot.Data)))
+grid on
+legend('$u$','$\hat{u}+Ly$')
+title('Total Input in Real ($\hat{u}+Ly$)')
+xlabel('Time (s)')
+ylabel('Input')
+
+ax8=subplot(2,3,2)
+plot(sim_out.u.Time,imag(squeeze(sim_out.u.Data)))
+hold on
+plot(sim_out.uhat_tot.Time,imag(squeeze(sim_out.uhat_tot.Data)))
+grid on
+legend('$u$','$\hat{u}+Ly$')
+title('Total Input in Complex ($\hat{u}+Ly$))')
+xlabel('Time (s)')
+ylabel('Input')
+
+ax9=subplot(2,3,3)
+plot(sim_out.eu_tot.Time,abs(squeeze(sim_out.eu_tot.Data)))
+grid on
+legend('$u$','$\hat{u}+Ly$')
+title('Abs Error ($u-(\hat{u}+Ly)$')
+xlabel('Time (s)')
+ylabel('Input Error')
+
+ax10=subplot(2,3,4)
+plot(sim_out.u.Time,real(squeeze(sim_out.u.Data)))
+hold on
+plot(sim_out.uhat_tot.Time,real(squeeze(sim_out.uhat.Data)))
+grid on
+legend('$u$','$\hat{u}$')
+title('Estimated Input in Real ($\hat{u}$)')
+xlabel('Time (s)')
+ylabel('Input')
+
+ax11=subplot(2,3,5)
+plot(sim_out.u.Time,imag(squeeze(sim_out.u.Data)))
+hold on
+plot(sim_out.uhat_tot.Time,imag(squeeze(sim_out.uhat.Data)))
+grid on
+legend('$u$','$\hat{u}$')
+title('Estimated Input in Complex ($\hat{u}$)')
+xlabel('Time (s)')
+ylabel('Input')
+
+ax12=subplot(2,3,6)
+plot(sim_out.eu_tot.Time,abs(squeeze(sim_out.eu.Data)))
+grid on
+legend('$u$','$\hat{u}$')
+title('Abs Error ($u-(\hat{u}))$')
+xlabel('Time (s)')
+ylabel('Input Error')
+sgtitle(['UIO Input Details: ', num2str(g2),' $\sin{t}+$',num2str(g3),' $\cos{t}+$',num2str(g1)])
